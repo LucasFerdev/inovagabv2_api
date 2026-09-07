@@ -12,8 +12,6 @@ import br.com.inovagab.api.dto.LoginResponse;
 import br.com.inovagab.api.dto.UsuarioResponse;
 import br.com.inovagab.api.exception.CredenciaisInvalidasException;
 import br.com.inovagab.api.exception.EmailDuplicadoException;
-import br.com.inovagab.api.exception.UsuarioInativoException;
-import br.com.inovagab.api.exception.UsuarioNaoEncontradoException;
 import br.com.inovagab.api.model.Role;
 import br.com.inovagab.api.model.Usuario;
 import br.com.inovagab.api.repository.UsuarioRepository;
@@ -25,11 +23,14 @@ public class AuthService {
 	private final UsuarioRepository usuarioRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
+	private final UsuarioAutenticadoService usuarioAutenticadoService;
 
-	public AuthService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+	public AuthService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
+			UsuarioAutenticadoService usuarioAutenticadoService) {
 		this.usuarioRepository = usuarioRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
+		this.usuarioAutenticadoService = usuarioAutenticadoService;
 	}
 
 	public UsuarioResponse cadastrar(CadastroUsuarioRequest request) {
@@ -65,12 +66,7 @@ public class AuthService {
 	}
 
 	public UsuarioResponse buscarUsuario(String id) {
-		Usuario usuario = usuarioRepository.findById(id)
-				.orElseThrow(UsuarioNaoEncontradoException::new);
-		if (!usuario.isAtivo()) {
-			throw new UsuarioInativoException();
-		}
-		return UsuarioResponse.de(usuario);
+		return UsuarioResponse.de(usuarioAutenticadoService.buscarAtivo(id));
 	}
 
 	private String normalizarEmail(String email) {

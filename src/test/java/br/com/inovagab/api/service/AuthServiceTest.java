@@ -53,7 +53,11 @@ class AuthServiceTest {
 		JwtProperties properties = new JwtProperties(SEGREDO, 3600, "inovagab-api");
 		JwtConfig jwtConfig = new JwtConfig();
 		JwtService jwtService = new JwtService(jwtConfig.jwtEncoder(properties), properties);
-		authService = new AuthService(usuarioRepository, passwordEncoder, jwtService);
+		authService = new AuthService(
+				usuarioRepository,
+				passwordEncoder,
+				jwtService,
+				new UsuarioAutenticadoService(usuarioRepository));
 	}
 
 	@Test

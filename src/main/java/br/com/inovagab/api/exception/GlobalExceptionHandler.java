@@ -6,13 +6,19 @@ import java.util.stream.Collectors;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import br.com.inovagab.api.dto.RespostaErro;
 
@@ -33,6 +39,29 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<RespostaErro> tratarCorpoInvalido(HttpMessageNotReadableException exception,
 			HttpServletRequest request) {
 		return resposta(HttpStatus.BAD_REQUEST, "Corpo da requisição inválido", request);
+	}
+
+	@ExceptionHandler(HandlerMethodValidationException.class)
+	public ResponseEntity<RespostaErro> tratarValidacaoDeParametros(HandlerMethodValidationException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.BAD_REQUEST, "Parâmetros da requisição inválidos", request);
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<RespostaErro> tratarTipoDeParametro(MethodArgumentTypeMismatchException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.BAD_REQUEST, "Parâmetro de consulta inválido", request);
+	}
+
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public ResponseEntity<RespostaErro> tratarMetodoNaoPermitido(HttpRequestMethodNotSupportedException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.METHOD_NOT_ALLOWED, "Método HTTP não permitido", request);
+	}
+
+	@ExceptionHandler({ NoResourceFoundException.class, NoHandlerFoundException.class })
+	public ResponseEntity<RespostaErro> tratarRotaNaoEncontrada(Exception exception, HttpServletRequest request) {
+		return resposta(HttpStatus.NOT_FOUND, "Rota não encontrada", request);
 	}
 
 	@ExceptionHandler(CredenciaisInvalidasException.class)
@@ -62,6 +91,20 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<RespostaErro> tratarUsuarioNaoEncontrado(UsuarioNaoEncontradoException exception,
 			HttpServletRequest request) {
 		return resposta(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(EstrategiaNaoEncontradaException.class)
+	public ResponseEntity<RespostaErro> tratarEstrategiaNaoEncontrada(EstrategiaNaoEncontradaException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler({ OperacaoEstrategiaInvalidaException.class, OptimisticLockingFailureException.class })
+	public ResponseEntity<RespostaErro> tratarConflitoDeEstrategia(Exception exception, HttpServletRequest request) {
+		String mensagem = exception instanceof OperacaoEstrategiaInvalidaException
+				? exception.getMessage()
+				: "A estratégia foi alterada por outra operação";
+		return resposta(HttpStatus.CONFLICT, mensagem, request);
 	}
 
 	@ExceptionHandler(Exception.class)
