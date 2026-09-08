@@ -99,12 +99,36 @@ public class GlobalExceptionHandler {
 		return resposta(HttpStatus.NOT_FOUND, exception.getMessage(), request);
 	}
 
+	@ExceptionHandler(IdeiaNaoEncontradaException.class)
+	public ResponseEntity<RespostaErro> tratarIdeiaNaoEncontrada(IdeiaNaoEncontradaException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(ProjetoNaoEncontradoException.class)
+	public ResponseEntity<RespostaErro> tratarProjetoNaoEncontrado(ProjetoNaoEncontradoException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+	}
+
 	@ExceptionHandler({ OperacaoEstrategiaInvalidaException.class, OptimisticLockingFailureException.class })
 	public ResponseEntity<RespostaErro> tratarConflitoDeEstrategia(Exception exception, HttpServletRequest request) {
 		String mensagem = exception instanceof OperacaoEstrategiaInvalidaException
 				? exception.getMessage()
 				: "A estratégia foi alterada por outra operação";
 		return resposta(HttpStatus.CONFLICT, mensagem, request);
+	}
+
+	@ExceptionHandler(OperacaoIdeiaInvalidaException.class)
+	public ResponseEntity<RespostaErro> tratarConflitoDeIdeia(OperacaoIdeiaInvalidaException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.CONFLICT, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(OperacaoProjetoInvalidaException.class)
+	public ResponseEntity<RespostaErro> tratarConflitoDeProjeto(OperacaoProjetoInvalidaException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.CONFLICT, exception.getMessage(), request);
 	}
 
 	@ExceptionHandler(Exception.class)

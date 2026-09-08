@@ -9,6 +9,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 
 import br.com.inovagab.api.model.Estrategia;
+import br.com.inovagab.api.model.Ideia;
+import br.com.inovagab.api.model.Projeto;
 import br.com.inovagab.api.model.Usuario;
 
 @Configuration
@@ -28,6 +30,26 @@ public class MongoConfig {
 					.createIndex(new Index().on("campanha", Sort.Direction.ASC));
 			mongoTemplate.indexOps(Estrategia.class)
 					.createIndex(new Index().on("data", Sort.Direction.DESC));
+			mongoTemplate.indexOps(Ideia.class)
+					.createIndex(new Index().on("autorId", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Ideia.class)
+					.createIndex(new Index().on("status", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Ideia.class)
+					.createIndex(new Index().on("estrategiaId", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Ideia.class)
+					.createIndex(new Index().on("categoria", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Ideia.class)
+					.createIndex(new Index().on("prioridade", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Ideia.class)
+					.createIndex(new Index().on("criadoEm", Sort.Direction.DESC));
+			mongoTemplate.indexOps(Projeto.class).createIndex(new Index().on("estrategiaId", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Projeto.class).createIndex(new Index().on("ideiaOrigemId", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Projeto.class).createIndex(new Index().on("status", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Projeto.class).createIndex(new Index().on("etapa", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Projeto.class)
+					.createIndex(new Index().on("gestorResponsavelId", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Projeto.class).createIndex(new Index().on("prazo", Sort.Direction.ASC));
+			mongoTemplate.indexOps(Projeto.class).createIndex(new Index().on("criadoEm", Sort.Direction.DESC));
 		};
 	}
 }
