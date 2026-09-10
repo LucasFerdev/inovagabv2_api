@@ -111,12 +111,16 @@ public class GlobalExceptionHandler {
 		return resposta(HttpStatus.NOT_FOUND, exception.getMessage(), request);
 	}
 
-	@ExceptionHandler({ OperacaoEstrategiaInvalidaException.class, OptimisticLockingFailureException.class })
-	public ResponseEntity<RespostaErro> tratarConflitoDeEstrategia(Exception exception, HttpServletRequest request) {
-		String mensagem = exception instanceof OperacaoEstrategiaInvalidaException
-				? exception.getMessage()
-				: "A estratégia foi alterada por outra operação";
-		return resposta(HttpStatus.CONFLICT, mensagem, request);
+	@ExceptionHandler(AnaliseIaNaoEncontradaException.class)
+	public ResponseEntity<RespostaErro> tratarAnaliseIaNaoEncontrada(AnaliseIaNaoEncontradaException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(OperacaoEstrategiaInvalidaException.class)
+	public ResponseEntity<RespostaErro> tratarConflitoDeEstrategia(OperacaoEstrategiaInvalidaException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.CONFLICT, exception.getMessage(), request);
 	}
 
 	@ExceptionHandler(OperacaoIdeiaInvalidaException.class)
@@ -129,6 +133,36 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<RespostaErro> tratarConflitoDeProjeto(OperacaoProjetoInvalidaException exception,
 			HttpServletRequest request) {
 		return resposta(HttpStatus.CONFLICT, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(OptimisticLockingFailureException.class)
+	public ResponseEntity<RespostaErro> tratarConflitoDeConcorrencia(OptimisticLockingFailureException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.CONFLICT,
+				"O recurso foi alterado por outra operação. Atualize os dados e tente novamente.", request);
+	}
+
+	@ExceptionHandler(GeminiNaoConfiguradoException.class)
+	public ResponseEntity<RespostaErro> tratarGeminiNaoConfigurado(GeminiNaoConfiguradoException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(GeminiLimiteExcedidoException.class)
+	public ResponseEntity<RespostaErro> tratarLimiteGemini(GeminiLimiteExcedidoException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler(GeminiTimeoutException.class)
+	public ResponseEntity<RespostaErro> tratarTimeoutGemini(GeminiTimeoutException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.GATEWAY_TIMEOUT, exception.getMessage(), request);
+	}
+
+	@ExceptionHandler({ GeminiRespostaInvalidaException.class, GeminiIndisponivelException.class })
+	public ResponseEntity<RespostaErro> tratarFalhaGemini(RuntimeException exception, HttpServletRequest request) {
+		return resposta(HttpStatus.BAD_GATEWAY, exception.getMessage(), request);
 	}
 
 	@ExceptionHandler(Exception.class)

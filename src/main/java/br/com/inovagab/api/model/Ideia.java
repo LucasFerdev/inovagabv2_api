@@ -33,6 +33,7 @@ public class Ideia {
 	private String justificativaAvaliacao;
 	private String avaliadoPorId;
 	private Instant avaliadoEm;
+	private AnaliseIaIdeia analiseIa;
 	@CreatedDate
 	@Indexed
 	private Instant criadoEm;
@@ -71,6 +72,8 @@ public class Ideia {
 	public void setAvaliadoPorId(String avaliadoPorId) { this.avaliadoPorId = avaliadoPorId; }
 	public Instant getAvaliadoEm() { return avaliadoEm; }
 	public void setAvaliadoEm(Instant avaliadoEm) { this.avaliadoEm = avaliadoEm; }
+	public AnaliseIaIdeia getAnaliseIa() { return analiseIa; }
+	public void setAnaliseIa(AnaliseIaIdeia analiseIa) { this.analiseIa = analiseIa; }
 	public Instant getCriadoEm() { return criadoEm; }
 	public void setCriadoEm(Instant criadoEm) { this.criadoEm = criadoEm; }
 	public Instant getAtualizadoEm() { return atualizadoEm; }

@@ -7,5 +7,6 @@ public enum AcaoHistoricoIdeia {
 	PRIORIZADA,
 	APROVADA,
 	REJEITADA,
+	ANALISADA_POR_IA,
 	ARQUIVADA
 }

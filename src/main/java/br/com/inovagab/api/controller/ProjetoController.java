@@ -34,10 +34,13 @@ import br.com.inovagab.api.dto.RegistrarResultadosProjetoRequest;
 import br.com.inovagab.api.model.EtapaProjeto;
 import br.com.inovagab.api.model.StatusProjeto;
 import br.com.inovagab.api.service.ProjetoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Validated
 @RestController
 @RequestMapping("/api/projetos")
+@Tag(name = "Projetos", description = "Planejamento, execução, resultados e histórico dos projetos.")
 public class ProjetoController {
 
 	private static final String CONSULTA = "hasAnyRole('GESTOR', 'LIDERANCA')";
@@ -49,6 +52,7 @@ public class ProjetoController {
 	}
 
 	@PostMapping
+	@Operation(summary = "Criar projeto")
 	@PreAuthorize(ESCRITA)
 	public ResponseEntity<ProjetoResponse> criar(@Valid @RequestBody CriarProjetoRequest request,
 			@AuthenticationPrincipal Jwt jwt) {
@@ -56,6 +60,7 @@ public class ProjetoController {
 	}
 
 	@GetMapping
+	@Operation(summary = "Listar projetos com filtros e paginação")
 	@PreAuthorize(CONSULTA)
 	public PaginaResponse<ProjetoResponse> listar(@RequestParam(required = false) StatusProjeto status,
 			@RequestParam(required = false) EtapaProjeto etapa,
@@ -69,18 +74,21 @@ public class ProjetoController {
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Consultar projeto por ID")
 	@PreAuthorize(CONSULTA)
 	public ProjetoResponse buscar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return projetoService.buscarPorId(id, jwt.getSubject());
 	}
 
 	@GetMapping("/{id}/historico")
+	@Operation(summary = "Consultar histórico do projeto")
 	@PreAuthorize(CONSULTA)
 	public List<HistoricoProjetoResponse> historico(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return projetoService.consultarHistorico(id, jwt.getSubject());
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Atualizar dados editáveis do projeto")
 	@PreAuthorize(ESCRITA)
 	public ProjetoResponse atualizar(@PathVariable String id, @Valid @RequestBody AtualizarProjetoRequest request,
 			@AuthenticationPrincipal Jwt jwt) {
@@ -88,6 +96,7 @@ public class ProjetoController {
 	}
 
 	@PatchMapping("/{id}/progresso")
+	@Operation(summary = "Atualizar etapa e progresso do projeto")
 	@PreAuthorize(ESCRITA)
 	public ProjetoResponse atualizarProgresso(@PathVariable String id,
 			@Valid @RequestBody AtualizarProgressoProjetoRequest request, @AuthenticationPrincipal Jwt jwt) {
@@ -95,6 +104,7 @@ public class ProjetoController {
 	}
 
 	@PatchMapping("/{id}/resultados")
+	@Operation(summary = "Registrar resultados do projeto")
 	@PreAuthorize(ESCRITA)
 	public ProjetoResponse registrarResultados(@PathVariable String id,
 			@Valid @RequestBody RegistrarResultadosProjetoRequest request, @AuthenticationPrincipal Jwt jwt) {
@@ -102,12 +112,14 @@ public class ProjetoController {
 	}
 
 	@PatchMapping("/{id}/concluir")
+	@Operation(summary = "Concluir projeto")
 	@PreAuthorize(ESCRITA)
 	public ProjetoResponse concluir(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return projetoService.concluir(id, jwt.getSubject());
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Cancelar projeto")
 	@PreAuthorize(ESCRITA)
 	public ResponseEntity<Void> cancelar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		projetoService.cancelar(id, jwt.getSubject());

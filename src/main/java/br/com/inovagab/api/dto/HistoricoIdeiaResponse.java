@@ -19,12 +19,14 @@ public record HistoricoIdeiaResponse(
 		String estrategiaId,
 		StatusIdeia status,
 		Integer prioridade,
-		String justificativaAvaliacao) {
+		String justificativaAvaliacao,
+		AnaliseIaIdeiaResponse analiseIa) {
 
 	public static HistoricoIdeiaResponse de(HistoricoIdeia historico) {
 		return new HistoricoIdeiaResponse(historico.getId(), historico.getAcao(), historico.getDataHora(),
 				historico.getUsuarioId(), historico.getTitulo(), historico.getProblema(), historico.getSolucaoProposta(),
 				historico.getBeneficiosEsperados(), historico.getCategoria(), historico.getEstrategiaId(),
-				historico.getStatus(), historico.getPrioridade(), historico.getJustificativaAvaliacao());
+				historico.getStatus(), historico.getPrioridade(), historico.getJustificativaAvaliacao(),
+				historico.getAnaliseIa() == null ? null : AnaliseIaIdeiaResponse.de(historico.getAnaliseIa()));
 	}
 }

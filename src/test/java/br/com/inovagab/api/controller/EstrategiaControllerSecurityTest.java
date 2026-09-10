@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -255,6 +256,19 @@ class EstrategiaControllerSecurityTest {
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.status").value(409))
 				.andExpect(jsonPath("$.mensagem").value("Estratégia arquivada não pode ser alterada"));
+	}
+
+	@Test
+	void conflitoOtimistaRetornaMensagemGenerica() throws Exception {
+		when(estrategiaService.ativar("estrategia-id", "usuario-id"))
+				.thenThrow(new OptimisticLockingFailureException("detalhe interno"));
+
+		mockMvc.perform(patch("/api/estrategias/estrategia-id/ativar")
+				.header("Authorization", bearer(Role.LIDERANCA)))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.mensagem").value(
+						"O recurso foi alterado por outra operação. Atualize os dados e tente novamente."))
+				.andExpect(content().string(not(containsString("detalhe interno"))));
 	}
 
 	@Test

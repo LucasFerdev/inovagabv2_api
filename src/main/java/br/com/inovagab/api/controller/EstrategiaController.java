@@ -30,10 +30,13 @@ import br.com.inovagab.api.dto.HistoricoEstrategiaResponse;
 import br.com.inovagab.api.dto.PaginaResponse;
 import br.com.inovagab.api.model.StatusEstrategia;
 import br.com.inovagab.api.service.EstrategiaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Validated
 @RestController
 @RequestMapping("/api/estrategias")
+@Tag(name = "Estratégias", description = "Gestão, consulta, ciclo de vida e histórico das estratégias.")
 public class EstrategiaController {
 
 	private static final String PODE_CONSULTAR = "hasAnyRole('OPERADOR', 'GESTOR', 'LIDERANCA')";
@@ -46,6 +49,7 @@ public class EstrategiaController {
 	}
 
 	@PostMapping
+	@Operation(summary = "Criar estratégia")
 	@PreAuthorize(PODE_ALTERAR)
 	public ResponseEntity<EstrategiaResponse> criar(@Valid @RequestBody CriarEstrategiaRequest request,
 			@AuthenticationPrincipal Jwt jwt) {
@@ -53,6 +57,7 @@ public class EstrategiaController {
 	}
 
 	@GetMapping
+	@Operation(summary = "Listar estratégias com filtros e paginação")
 	@PreAuthorize(PODE_CONSULTAR)
 	public PaginaResponse<EstrategiaResponse> listar(
 			@RequestParam(required = false) StatusEstrategia status,
@@ -65,18 +70,21 @@ public class EstrategiaController {
 	}
 
 	@GetMapping("/ativas")
+	@Operation(summary = "Listar estratégias ativas")
 	@PreAuthorize(PODE_CONSULTAR)
 	public List<EstrategiaResponse> listarAtivas(@AuthenticationPrincipal Jwt jwt) {
 		return estrategiaService.listarAtivas(jwt.getSubject());
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Consultar estratégia por ID")
 	@PreAuthorize(PODE_CONSULTAR)
 	public EstrategiaResponse buscarPorId(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return estrategiaService.buscarPorId(id, jwt.getSubject());
 	}
 
 	@GetMapping("/{id}/historico")
+	@Operation(summary = "Consultar histórico da estratégia")
 	@PreAuthorize(PODE_CONSULTAR)
 	public List<HistoricoEstrategiaResponse> consultarHistorico(@PathVariable String id,
 			@AuthenticationPrincipal Jwt jwt) {
@@ -84,6 +92,7 @@ public class EstrategiaController {
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Atualizar estratégia")
 	@PreAuthorize(PODE_ALTERAR)
 	public EstrategiaResponse atualizar(@PathVariable String id,
 			@Valid @RequestBody AtualizarEstrategiaRequest request, @AuthenticationPrincipal Jwt jwt) {
@@ -91,18 +100,21 @@ public class EstrategiaController {
 	}
 
 	@PatchMapping("/{id}/ativar")
+	@Operation(summary = "Ativar estratégia")
 	@PreAuthorize(PODE_ALTERAR)
 	public EstrategiaResponse ativar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return estrategiaService.ativar(id, jwt.getSubject());
 	}
 
 	@PatchMapping("/{id}/desativar")
+	@Operation(summary = "Desativar estratégia")
 	@PreAuthorize(PODE_ALTERAR)
 	public EstrategiaResponse desativar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return estrategiaService.desativar(id, jwt.getSubject());
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Arquivar estratégia")
 	@PreAuthorize(PODE_ALTERAR)
 	public ResponseEntity<Void> arquivar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		estrategiaService.arquivar(id, jwt.getSubject());

@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import br.com.inovagab.api.config.JwtConfig;
+import br.com.inovagab.api.config.OpenApiConfig;
 import br.com.inovagab.api.config.SecurityConfig;
 import br.com.inovagab.api.dto.LoginResponse;
 import br.com.inovagab.api.dto.UsuarioResponse;
@@ -42,7 +43,8 @@ import br.com.inovagab.api.security.SecurityErrorHandler;
 import br.com.inovagab.api.service.AuthService;
 
 @WebMvcTest(AuthController.class)
-@Import({ SecurityConfig.class, JwtConfig.class, SecurityErrorHandler.class, GlobalExceptionHandler.class })
+@Import({ SecurityConfig.class, JwtConfig.class, OpenApiConfig.class, SecurityErrorHandler.class,
+		GlobalExceptionHandler.class })
 @TestPropertySource(properties = {
 		"app.jwt.secret=c2VncmVkby1kZS10ZXN0ZS1jb20tbWFpcy1kZS0yNTYtYml0cw==",
 		"app.jwt.expiration-seconds=3600",
@@ -58,6 +60,13 @@ class AuthControllerSecurityTest {
 
 	@MockitoBean
 	private AuthService authService;
+
+	@Test
+	void documentacaoOpenApiEPublicaNaConfiguracaoDeSeguranca() throws Exception {
+		mockMvc.perform(get("/v3/api-docs"))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.status").value(404));
+	}
 
 	@Test
 	void cadastroPublicoRetornaCriadoSemSenhaHash() throws Exception {

@@ -32,10 +32,13 @@ import br.com.inovagab.api.dto.PriorizarIdeiaRequest;
 import br.com.inovagab.api.dto.RejeitarIdeiaRequest;
 import br.com.inovagab.api.model.StatusIdeia;
 import br.com.inovagab.api.service.IdeiaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Validated
 @RestController
 @RequestMapping("/api/ideias")
+@Tag(name = "Ideias", description = "Submissão, avaliação, consulta e histórico das ideias de inovação.")
 public class IdeiaController {
 
 	private final IdeiaService ideiaService;
@@ -45,6 +48,7 @@ public class IdeiaController {
 	}
 
 	@PostMapping
+	@Operation(summary = "Enviar nova ideia")
 	@PreAuthorize("hasRole('OPERADOR')")
 	public ResponseEntity<IdeiaResponse> criar(@Valid @RequestBody CriarIdeiaRequest request,
 			@AuthenticationPrincipal Jwt jwt) {
@@ -52,6 +56,7 @@ public class IdeiaController {
 	}
 
 	@GetMapping("/minhas")
+	@Operation(summary = "Listar ideias do operador autenticado")
 	@PreAuthorize("hasRole('OPERADOR')")
 	public PaginaResponse<IdeiaResponse> listarMinhas(
 			@RequestParam(defaultValue = "0") @Min(0) int pagina,
@@ -61,6 +66,7 @@ public class IdeiaController {
 	}
 
 	@GetMapping
+	@Operation(summary = "Listar ideias para gestão e liderança")
 	@PreAuthorize("hasAnyRole('GESTOR', 'LIDERANCA')")
 	public PaginaResponse<IdeiaResponse> listar(@RequestParam(required = false) StatusIdeia status,
 			@RequestParam(required = false) String categoria,
@@ -73,18 +79,21 @@ public class IdeiaController {
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Consultar ideia por ID")
 	@PreAuthorize("hasAnyRole('OPERADOR', 'GESTOR', 'LIDERANCA')")
 	public IdeiaResponse buscar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return ideiaService.buscarPorId(id, jwt.getSubject());
 	}
 
 	@GetMapping("/{id}/historico")
+	@Operation(summary = "Consultar histórico da ideia")
 	@PreAuthorize("hasAnyRole('OPERADOR', 'GESTOR', 'LIDERANCA')")
 	public List<HistoricoIdeiaResponse> historico(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return ideiaService.consultarHistorico(id, jwt.getSubject());
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Atualizar ideia enviada")
 	@PreAuthorize("hasRole('OPERADOR')")
 	public IdeiaResponse atualizar(@PathVariable String id, @Valid @RequestBody AtualizarIdeiaRequest request,
 			@AuthenticationPrincipal Jwt jwt) {
@@ -92,6 +101,7 @@ public class IdeiaController {
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Arquivar ideia enviada")
 	@PreAuthorize("hasRole('OPERADOR')")
 	public ResponseEntity<Void> arquivar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		ideiaService.arquivar(id, jwt.getSubject());
@@ -99,12 +109,14 @@ public class IdeiaController {
 	}
 
 	@PatchMapping("/{id}/analisar")
+	@Operation(summary = "Colocar ideia em análise")
 	@PreAuthorize("hasRole('GESTOR')")
 	public IdeiaResponse analisar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return ideiaService.analisar(id, jwt.getSubject());
 	}
 
 	@PatchMapping("/{id}/priorizar")
+	@Operation(summary = "Definir prioridade da ideia")
 	@PreAuthorize("hasRole('GESTOR')")
 	public IdeiaResponse priorizar(@PathVariable String id, @Valid @RequestBody PriorizarIdeiaRequest request,
 			@AuthenticationPrincipal Jwt jwt) {
@@ -112,12 +124,14 @@ public class IdeiaController {
 	}
 
 	@PatchMapping("/{id}/aprovar")
+	@Operation(summary = "Aprovar ideia")
 	@PreAuthorize("hasRole('GESTOR')")
 	public IdeiaResponse aprovar(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
 		return ideiaService.aprovar(id, jwt.getSubject());
 	}
 
 	@PatchMapping("/{id}/rejeitar")
+	@Operation(summary = "Rejeitar ideia")
 	@PreAuthorize("hasRole('GESTOR')")
 	public IdeiaResponse rejeitar(@PathVariable String id, @Valid @RequestBody RejeitarIdeiaRequest request,
 			@AuthenticationPrincipal Jwt jwt) {

@@ -17,9 +17,13 @@ import br.com.inovagab.api.dto.LoginRequest;
 import br.com.inovagab.api.dto.LoginResponse;
 import br.com.inovagab.api.dto.UsuarioResponse;
 import br.com.inovagab.api.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Autenticação", description = "Cadastro, login e identificação do usuário autenticado.")
 public class AuthController {
 
 	private final AuthService authService;
@@ -29,16 +33,21 @@ public class AuthController {
 	}
 
 	@PostMapping("/cadastro")
+	@Operation(summary = "Cadastrar usuário operador")
+	@SecurityRequirements
 	public ResponseEntity<UsuarioResponse> cadastrar(@Valid @RequestBody CadastroUsuarioRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(authService.cadastrar(request));
 	}
 
 	@PostMapping("/login")
+	@Operation(summary = "Autenticar usuário e emitir JWT")
+	@SecurityRequirements
 	public LoginResponse login(@Valid @RequestBody LoginRequest request) {
 		return authService.login(request);
 	}
 
 	@GetMapping("/me")
+	@Operation(summary = "Consultar usuário autenticado")
 	public UsuarioResponse usuarioAutenticado(@AuthenticationPrincipal Jwt jwt) {
 		return authService.buscarUsuario(jwt.getSubject());
 	}

@@ -17,6 +17,7 @@ public class HistoricoIdeia {
 	private StatusIdeia status;
 	private Integer prioridade;
 	private String justificativaAvaliacao;
+	private AnaliseIaIdeia analiseIa;
 
 	public HistoricoIdeia() {
 	}
@@ -37,6 +38,14 @@ public class HistoricoIdeia {
 		this.status = status;
 		this.prioridade = prioridade;
 		this.justificativaAvaliacao = justificativaAvaliacao;
+	}
+
+	public HistoricoIdeia(String id, AcaoHistoricoIdeia acao, Instant dataHora, String usuarioId, String titulo,
+			String problema, String solucaoProposta, String beneficiosEsperados, String categoria, String estrategiaId,
+			StatusIdeia status, Integer prioridade, String justificativaAvaliacao, AnaliseIaIdeia analiseIa) {
+		this(id, acao, dataHora, usuarioId, titulo, problema, solucaoProposta, beneficiosEsperados, categoria,
+				estrategiaId, status, prioridade, justificativaAvaliacao);
+		this.analiseIa = analiseIa;
 	}
 
 	public String getId() { return id; }
@@ -65,4 +74,6 @@ public class HistoricoIdeia {
 	public void setPrioridade(Integer prioridade) { this.prioridade = prioridade; }
 	public String getJustificativaAvaliacao() { return justificativaAvaliacao; }
 	public void setJustificativaAvaliacao(String justificativaAvaliacao) { this.justificativaAvaliacao = justificativaAvaliacao; }
+	public AnaliseIaIdeia getAnaliseIa() { return analiseIa; }
+	public void setAnaliseIa(AnaliseIaIdeia analiseIa) { this.analiseIa = analiseIa; }
 }
