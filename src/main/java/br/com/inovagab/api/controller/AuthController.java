@@ -33,7 +33,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/cadastro")
-	@Operation(summary = "Cadastrar usuário operador")
+	@Operation(summary = "Cadastrar usuário")
 	@SecurityRequirements
 	public ResponseEntity<UsuarioResponse> cadastrar(@Valid @RequestBody CadastroUsuarioRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(authService.cadastrar(request));

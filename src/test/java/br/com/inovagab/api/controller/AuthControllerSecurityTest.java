@@ -32,6 +32,7 @@ import br.com.inovagab.api.config.OpenApiConfig;
 import br.com.inovagab.api.config.SecurityConfig;
 import br.com.inovagab.api.dto.LoginResponse;
 import br.com.inovagab.api.dto.UsuarioResponse;
+import br.com.inovagab.api.exception.CodigoAcessoInvalidoException;
 import br.com.inovagab.api.exception.CredenciaisInvalidasException;
 import br.com.inovagab.api.exception.EmailDuplicadoException;
 import br.com.inovagab.api.exception.GlobalExceptionHandler;
@@ -86,6 +87,70 @@ class AuthControllerSecurityTest {
 				.andExpect(jsonPath("$.role").value("OPERADOR"))
 				.andExpect(jsonPath("$.senhaHash").doesNotExist())
 				.andExpect(jsonPath("$.senha").doesNotExist());
+	}
+
+	@Test
+	void codigoDeAcessoNuncaApareceNaResposta() throws Exception {
+		String codigoAcesso = "codigo-confidencial-teste";
+		when(authService.cadastrar(any())).thenReturn(usuarioResponse());
+
+		mockMvc.perform(post("/api/auth/cadastro")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "nome": "Usuário Teste",
+						  "email": "usuario@exemplo.com",
+						  "senha": "senha-segura",
+						  "empresa": "Empresa Teste",
+						  "codigoAcesso": "%s"
+						}
+						""".formatted(codigoAcesso)))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.codigoAcesso").doesNotExist())
+				.andExpect(content().string(not(containsString(codigoAcesso))));
+	}
+
+	@Test
+	void tentativaDeEnviarRoleDiretamenteNaoConcedePrivilegios() throws Exception {
+		when(authService.cadastrar(any())).thenReturn(usuarioResponse());
+
+		mockMvc.perform(post("/api/auth/cadastro")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "nome": "Usuário Teste",
+						  "email": "usuario@exemplo.com",
+						  "senha": "senha-segura",
+						  "empresa": "Empresa Teste",
+						  "role": "LIDERANCA"
+						}
+						"""))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.role").value("OPERADOR"));
+	}
+
+	@Test
+	void codigoInvalidoRetornaErroPadronizadoSemExporValor() throws Exception {
+		String codigoAcesso = "codigo-invalido-teste";
+		when(authService.cadastrar(any())).thenThrow(new CodigoAcessoInvalidoException());
+
+		mockMvc.perform(post("/api/auth/cadastro")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "nome": "Usuário Teste",
+						  "email": "usuario@exemplo.com",
+						  "senha": "senha-segura",
+						  "empresa": "Empresa Teste",
+						  "codigoAcesso": "%s"
+						}
+						""".formatted(codigoAcesso)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.erro").value("Bad Request"))
+				.andExpect(jsonPath("$.mensagem").value("Código de acesso inválido"))
+				.andExpect(jsonPath("$.path").value("/api/auth/cadastro"))
+				.andExpect(content().string(not(containsString(codigoAcesso))));
 	}
 
 	@Test

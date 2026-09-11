@@ -33,6 +33,8 @@ terminal. Nunca grave valores reais em `application.properties`, `.env.example` 
 | `MONGODB_URI` | Sim | URI completa e confidencial do MongoDB Atlas |
 | `JWT_SECRET` | Sim | Chave Base64 forte, com pelo menos 256 bits |
 | `JWT_EXPIRATION_SECONDS` | Não | Validade do JWT; padrão `3600` |
+| `CADASTRO_CODIGO_GESTOR` | Não | Código privado fornecido pela administração para cadastro de Gestores |
+| `CADASTRO_CODIGO_LIDERANCA` | Não | Código privado fornecido pela administração para cadastro de Lideranças |
 | `GEMINI_API_KEY` | Para IA | Chave confidencial da Gemini API |
 | `GEMINI_MODEL` | Não | Modelo; padrão `gemini-3.5-flash-lite` |
 | `GEMINI_BASE_URL` | Não | Base oficial; padrão `https://generativelanguage.googleapis.com` |
@@ -160,7 +162,9 @@ Para compilar e executar todos os testes, que não acessam o MongoDB Atlas nem a
 
 ## Autenticação
 
-Cadastro público sempre cria um usuário `OPERADOR`:
+No cadastro público, a ausência de `codigoAcesso` cria um usuário `OPERADOR`. Um código válido fornecido pela
+administração define o perfil como `GESTOR` ou `LIDERANCA`. A role é sempre determinada pelo backend e não pode ser
+escolhida diretamente no JSON.
 
 ```http
 POST /api/auth/cadastro
@@ -173,6 +177,9 @@ Content-Type: application/json
   "empresa": "Empresa exemplo"
 }
 ```
+
+Os códigos reais de acesso são confidenciais e nunca devem ser incluídos no README, no `.env.example` ou em qualquer
+outro arquivo versionado. Se os códigos não estiverem configurados, o cadastro comum de `OPERADOR` continua disponível.
 
 Após o login, envie o JWT nas rotas protegidas:
 

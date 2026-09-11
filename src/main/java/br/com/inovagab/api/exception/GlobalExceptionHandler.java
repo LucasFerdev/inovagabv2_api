@@ -70,6 +70,12 @@ public class GlobalExceptionHandler {
 		return resposta(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
 	}
 
+	@ExceptionHandler(CodigoAcessoInvalidoException.class)
+	public ResponseEntity<RespostaErro> tratarCodigoAcessoInvalido(CodigoAcessoInvalidoException exception,
+			HttpServletRequest request) {
+		return resposta(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
+	}
+
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<RespostaErro> tratarAcessoNegado(AccessDeniedException exception,
 			HttpServletRequest request) {
