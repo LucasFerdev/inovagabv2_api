@@ -96,6 +96,7 @@ Para compilar e executar todos os testes, que não acessam o MongoDB Atlas nem a
 | Ideias | Cria e administra próprias ideias enviadas | Consulta e avaliação | Consulta |
 | Projetos | Sem acesso | Gestão completa | Consulta |
 | Dashboard | Sem acesso | Sem acesso | Consulta |
+| Ranking de colaboradores | Consulta | Consulta | Consulta |
 | Executar análise por IA | Não | Sim | Não |
 | Consultar análise por IA | Não | Sim | Sim |
 
@@ -150,6 +151,7 @@ Para compilar e executar todos os testes, que não acessam o MongoDB Atlas nem a
 - `GET /api/dashboard/resumo`
 - `GET /api/dashboard/estrategias/{estrategiaId}`
 - `GET /api/dashboard/projetos/{projetoId}`
+- `GET /api/ranking/colaboradores`
 - `POST /api/ia/ideias/{ideiaId}/analisar?recalcular=false`
 - `GET /api/ia/ideias/{ideiaId}/analise`
 
