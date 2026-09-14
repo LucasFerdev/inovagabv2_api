@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -92,6 +94,29 @@ class DashboardServiceTest {
 	}
 
 	@Test
+	void agregacaoDeProjetosUsaExpressaoValidaParaAtrasos() {
+		agregacoes(new Document(), new Document());
+
+		dashboardService.resumo("lider-id");
+
+		ArgumentCaptor<Aggregation> captor = ArgumentCaptor.forClass(Aggregation.class);
+		verify(mongoTemplate).aggregate(captor.capture(), eq(Projeto.class), eq(Document.class));
+		List<Document> pipeline = captor.getValue().toPipeline(Aggregation.DEFAULT_CONTEXT);
+		String bson = pipeline.toString();
+		assertThat(bson).doesNotContain("$nin");
+
+		Document group = pipeline.stream().filter(stage -> stage.containsKey("$group")).findFirst().orElseThrow()
+				.get("$group", Document.class);
+		Document cond = group.get("atrasados", Document.class).get("$sum", Document.class)
+				.get("$cond", Document.class);
+		Document atraso = cond.get("if", Document.class);
+		assertThat(atraso).containsOnlyKeys("$and");
+		assertThat(atraso.getList("$and", Document.class)).extracting(Document::keySet)
+				.containsExactly(java.util.Set.of("$lt"), java.util.Set.of("$ne"), java.util.Set.of("$ne"));
+		assertThat(bson).contains("$prazo", "$status", "CONCLUIDO", "CANCELADO");
+	}
+
+	@Test
 	void roiUtilizaArredondamentoExplicito() {
 		agregacoes(new Document("investimento", new BigDecimal("3.00")).append("retorno", new BigDecimal("4.00")),
 				new Document());
@@ -126,12 +151,15 @@ class DashboardServiceTest {
 	}
 
 	@Test
-	void projetoConcluidoNaoEConsideradoAtrasado() {
-		Projeto projeto = projeto(StatusProjeto.CONCLUIDO, LocalDate.now().minusDays(10));
-		projeto.setIdeiaOrigemId(null);
-		when(projetoRepository.findById("projeto-id")).thenReturn(Optional.of(projeto));
+	void dashboardPorProjetoAplicaTodasAsRegrasDeAtraso() {
 		when(estrategiaRepository.findById("estrategia-id")).thenReturn(Optional.of(estrategia()));
-		assertThat(dashboardService.porProjeto("projeto-id", "lider-id").atrasado()).isFalse();
+
+		assertThat(atrasado(StatusProjeto.PLANEJADO, LocalDate.now().minusDays(1))).isTrue();
+		assertThat(atrasado(StatusProjeto.EM_ANDAMENTO, LocalDate.now().minusDays(1))).isTrue();
+		assertThat(atrasado(StatusProjeto.PAUSADO, LocalDate.now().minusDays(1))).isTrue();
+		assertThat(atrasado(StatusProjeto.CONCLUIDO, LocalDate.now().minusDays(1))).isFalse();
+		assertThat(atrasado(StatusProjeto.CANCELADO, LocalDate.now().minusDays(1))).isFalse();
+		assertThat(atrasado(StatusProjeto.PLANEJADO, LocalDate.now().plusDays(1))).isFalse();
 	}
 
 	@Test
@@ -154,6 +182,13 @@ class DashboardServiceTest {
 	private AggregationResults<Document> resultados(Document documento) {
 		return documento.isEmpty() ? new AggregationResults<>(List.of(), new Document())
 				: new AggregationResults<>(List.of(documento), new Document());
+	}
+
+	private boolean atrasado(StatusProjeto status, LocalDate prazo) {
+		Projeto projeto = projeto(status, prazo);
+		projeto.setIdeiaOrigemId(null);
+		when(projetoRepository.findById("projeto-id")).thenReturn(Optional.of(projeto));
+		return dashboardService.porProjeto("projeto-id", "lider-id").atrasado();
 	}
 
 	private Estrategia estrategia() {

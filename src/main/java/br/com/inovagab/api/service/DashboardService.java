@@ -3,6 +3,8 @@ package br.com.inovagab.api.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +13,10 @@ import org.bson.Document;
 import org.bson.types.Decimal128;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationExpression;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.BooleanOperators;
+import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
 import org.springframework.data.mongodb.core.aggregation.ConditionalOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
@@ -106,8 +111,10 @@ public class DashboardService {
 	}
 
 	private Aggregation agregacaoProjetos(String estrategiaId) {
-		Criteria atrasado = Criteria.where("prazo").lt(LocalDate.now()).and("status")
-				.nin(StatusProjeto.CONCLUIDO, StatusProjeto.CANCELADO);
+		AggregationExpression atrasado = BooleanOperators.And.and(
+				ComparisonOperators.Lt.valueOf("prazo").lessThanValue(dataAtual()),
+				ComparisonOperators.Ne.valueOf("status").notEqualToValue(StatusProjeto.CONCLUIDO.name()),
+				ComparisonOperators.Ne.valueOf("status").notEqualToValue(StatusProjeto.CANCELADO.name()));
 		List<org.springframework.data.mongodb.core.aggregation.AggregationOperation> operacoes = new java.util.ArrayList<>();
 		if (estrategiaId != null) operacoes.add(Aggregation.match(Criteria.where("estrategiaId").is(estrategiaId)));
 		operacoes.add(Aggregation.group().count().as("total")
@@ -182,6 +189,10 @@ public class DashboardService {
 	private BigDecimal valor(BigDecimal valor) { return valor == null ? BigDecimal.ZERO : valor; }
 	private BigDecimal dinheiro(BigDecimal valor) { return valor.setScale(ESCALA, RoundingMode.HALF_UP); }
 	private BigDecimal percentual(BigDecimal valor) { return valor.setScale(ESCALA, RoundingMode.HALF_UP); }
+	private Date dataAtual() {
+		return Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+	}
+
 	private BigDecimal roi(BigDecimal investimento, BigDecimal retorno) {
 		if (investimento.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO.setScale(ESCALA);
 		return retorno.subtract(investimento).multiply(BigDecimal.valueOf(100))
