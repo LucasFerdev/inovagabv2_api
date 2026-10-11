@@ -1,0 +1,10 @@
+**/.git
+**/.idea
+**/target
+**/build
+**/.gradle
+**/.env
+**/.env.*
+**/local.properties
+**/*.zip
+**/*.log
