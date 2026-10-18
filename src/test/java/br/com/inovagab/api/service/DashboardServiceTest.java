@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.bson.Document;
@@ -117,6 +118,40 @@ class DashboardServiceTest {
 	}
 
 	@Test
+	void projetoCanceladoNaoEntraNoInvestimentoRetornoERoi() {
+		Document group = grupoProjetos();
+		Document cancelado = new Document("status", StatusProjeto.CANCELADO.name())
+				.append("investimento", new BigDecimal("1000.00"))
+				.append("retornoFinanceiro", new BigDecimal("1250.00"));
+		Document ativo = new Document("status", StatusProjeto.EM_ANDAMENTO.name())
+				.append("investimento", new BigDecimal("1000.00"))
+				.append("retornoFinanceiro", new BigDecimal("1250.00"));
+
+		assertThat(valorConsiderado(group.get("investimento", Document.class), cancelado)).isEqualTo(0);
+		assertThat(valorConsiderado(group.get("retorno", Document.class), cancelado)).isEqualTo(0);
+		assertThat(valorConsiderado(group.get("investimento", Document.class), ativo)).isEqualTo(new BigDecimal("1000.00"));
+		assertThat(valorConsiderado(group.get("retorno", Document.class), ativo)).isEqualTo(new BigDecimal("1250.00"));
+	}
+
+	@Test
+	void projetoNovoComGanhoZeroESemResultadoNaoEntraNaProdutividadeMedia() {
+		Document group = grupoProjetos();
+		Document media = group.get("produtividadeMedia", Document.class);
+		Document projetoNovo = new Document("status", StatusProjeto.PLANEJADO.name())
+				.append("ganhoProdutividadePercentual", new BigDecimal("0.00"));
+		Document comResultadoZero = new Document("status", StatusProjeto.EM_ANDAMENTO.name())
+				.append("ganhoProdutividadePercentual", new BigDecimal("0.00"))
+				.append("resultado", "Redução de custos");
+		Document canceladoComResultado = new Document("status", StatusProjeto.CANCELADO.name())
+				.append("ganhoProdutividadePercentual", new BigDecimal("18.00"))
+				.append("resultado", "Redução de custos");
+
+		assertThat(valorConsiderado(media, projetoNovo)).isNull();
+		assertThat(valorConsiderado(media, comResultadoZero)).isEqualTo(new BigDecimal("0.00"));
+		assertThat(valorConsiderado(media, canceladoComResultado)).isNull();
+	}
+
+	@Test
 	void roiUtilizaArredondamentoExplicito() {
 		agregacoes(new Document("investimento", new BigDecimal("3.00")).append("retorno", new BigDecimal("4.00")),
 				new Document());
@@ -170,6 +205,47 @@ class DashboardServiceTest {
 		when(estrategiaRepository.findById("inexistente")).thenReturn(Optional.empty());
 		assertThatThrownBy(() -> dashboardService.porEstrategia("inexistente", "lider-id"))
 				.isInstanceOf(EstrategiaNaoEncontradaException.class);
+	}
+
+	private Document grupoProjetos() {
+		agregacoes(new Document(), new Document());
+		dashboardService.resumo("lider-id");
+		ArgumentCaptor<Aggregation> captor = ArgumentCaptor.forClass(Aggregation.class);
+		verify(mongoTemplate).aggregate(captor.capture(), eq(Projeto.class), eq(Document.class));
+		return captor.getValue().toPipeline(Aggregation.DEFAULT_CONTEXT).stream()
+				.filter(stage -> stage.containsKey("$group")).findFirst().orElseThrow().get("$group", Document.class);
+	}
+
+	private Object valorConsiderado(Document acumulador, Document projeto) {
+		Object definicao = acumulador.containsKey("$sum") ? acumulador.get("$sum") : acumulador.get("$avg");
+		Document cond = condicional(definicao);
+		return booleano(cond.get("if"), projeto) ? resolver(cond.get("then"), projeto) : resolver(cond.get("else"), projeto);
+	}
+
+	private Document condicional(Object definicao) {
+		Document documento = (Document) definicao;
+		Object cond = documento.get("$cond");
+		if (cond instanceof Document formaObjeto) return formaObjeto;
+		List<?> formaLista = (List<?>) cond;
+		return new Document("if", formaLista.get(0)).append("then", formaLista.get(1)).append("else", formaLista.get(2));
+	}
+
+	private boolean booleano(Object expressao, Document projeto) {
+		Document documento = (Document) expressao;
+		if (documento.containsKey("$and")) {
+			return ((List<?>) documento.get("$and")).stream().allMatch(item -> booleano(item, projeto));
+		}
+		if (documento.containsKey("$ne")) {
+			List<?> args = (List<?>) documento.get("$ne");
+			return !Objects.equals(resolver(args.get(0), projeto), resolver(args.get(1), projeto));
+		}
+		throw new IllegalStateException(documento.toJson());
+	}
+
+	private Object resolver(Object valor, Document projeto) {
+		if (valor instanceof String texto && texto.startsWith("$")) return projeto.get(texto.substring(1));
+		if (valor instanceof Document documento && documento.containsKey("$literal")) return documento.get("$literal");
+		return valor;
 	}
 
 	private void agregacoes(Document projetos, Document ideias) {
