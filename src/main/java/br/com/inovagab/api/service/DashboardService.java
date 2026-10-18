@@ -3,7 +3,6 @@ package br.com.inovagab.api.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
@@ -190,7 +189,7 @@ public class DashboardService {
 	private BigDecimal dinheiro(BigDecimal valor) { return valor.setScale(ESCALA, RoundingMode.HALF_UP); }
 	private BigDecimal percentual(BigDecimal valor) { return valor.setScale(ESCALA, RoundingMode.HALF_UP); }
 	private Date dataAtual() {
-		return Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+		return Date.from(LocalDate.now(Projeto.FUSO).atStartOfDay(Projeto.FUSO).toInstant());
 	}
 
 	private BigDecimal roi(BigDecimal investimento, BigDecimal retorno) {
@@ -200,7 +199,6 @@ public class DashboardService {
 	}
 
 	private boolean atrasado(Projeto projeto) {
-		return projeto.getPrazo() != null && projeto.getPrazo().isBefore(LocalDate.now())
-				&& projeto.getStatus() != StatusProjeto.CONCLUIDO && projeto.getStatus() != StatusProjeto.CANCELADO;
+		return Projeto.atrasado(projeto.getPrazo(), projeto.getStatus());
 	}
 }

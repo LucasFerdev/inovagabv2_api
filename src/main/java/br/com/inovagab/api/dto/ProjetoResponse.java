@@ -10,13 +10,14 @@ import br.com.inovagab.api.model.StatusProjeto;
 
 public record ProjetoResponse(String id, String nome, String descricao, String estrategiaId, String ideiaOrigemId,
 		EtapaProjeto etapa, StatusProjeto status, Integer percentualProgresso, BigDecimal investimento, LocalDate prazo,
-		BigDecimal retornoFinanceiro, BigDecimal ganhoProdutividadePercentual, String resultado,
+		boolean atrasado, BigDecimal retornoFinanceiro, BigDecimal ganhoProdutividadePercentual, String resultado,
 		String gestorResponsavelId, Instant criadoEm, Instant atualizadoEm, Long versao) {
 
 	public static ProjetoResponse de(Projeto projeto) {
 		return new ProjetoResponse(projeto.getId(), projeto.getNome(), projeto.getDescricao(), projeto.getEstrategiaId(),
 				projeto.getIdeiaOrigemId(), projeto.getEtapa(), projeto.getStatus(), projeto.getPercentualProgresso(),
-				projeto.getInvestimento(), projeto.getPrazo(), projeto.getRetornoFinanceiro(),
+				projeto.getInvestimento(), projeto.getPrazo(),
+				Projeto.atrasado(projeto.getPrazo(), projeto.getStatus()), projeto.getRetornoFinanceiro(),
 				projeto.getGanhoProdutividadePercentual(), projeto.getResultado(), projeto.getGestorResponsavelId(),
 				projeto.getCriadoEm(), projeto.getAtualizadoEm(), projeto.getVersao());
 	}

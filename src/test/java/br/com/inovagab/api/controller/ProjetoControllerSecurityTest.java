@@ -131,6 +131,6 @@ class ProjetoControllerSecurityTest {
 	private ProjetoResponse response() {
 		return new ProjetoResponse("projeto-id", "Projeto válido", "Descrição completa do projeto", "estrategia-id", null,
 				EtapaProjeto.PLANEJAMENTO, StatusProjeto.PLANEJADO, 0, new BigDecimal("1000.00"), LocalDate.of(2027, 10, 1),
-				BigDecimal.ZERO, BigDecimal.ZERO, null, "usuario-id", Instant.now(), Instant.now(), 0L);
+				false, BigDecimal.ZERO, BigDecimal.ZERO, null, "usuario-id", Instant.now(), Instant.now(), 0L);
 	}
 }

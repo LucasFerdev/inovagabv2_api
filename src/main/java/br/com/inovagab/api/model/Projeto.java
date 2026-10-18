@@ -3,6 +3,7 @@ package br.com.inovagab.api.model;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +16,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "projetos")
 public class Projeto {
+
+	public static final ZoneId FUSO = ZoneId.systemDefault();
 
 	@Id private String id;
 	private String nome;
@@ -75,4 +78,9 @@ public class Projeto {
 	public List<HistoricoProjeto> getHistorico() { return historico; }
 	public void setHistorico(List<HistoricoProjeto> historico) { this.historico = historico == null ? new ArrayList<>() : historico; }
 	public void adicionarHistorico(HistoricoProjeto item) { historico.add(item); }
+
+	public static boolean atrasado(LocalDate prazo, StatusProjeto status) {
+		return prazo != null && prazo.isBefore(LocalDate.now(FUSO))
+				&& status != StatusProjeto.CONCLUIDO && status != StatusProjeto.CANCELADO;
+	}
 }
