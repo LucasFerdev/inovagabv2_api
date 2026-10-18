@@ -11,8 +11,10 @@ import br.com.inovagab.api.model.StatusProjeto;
 public record AtualizarProgressoProjetoRequest(
 		@NotNull(message = "A etapa é obrigatória") EtapaProjeto etapa,
 		@NotNull(message = "O status é obrigatório") StatusProjeto status,
-		@NotNull(message = "O percentual de progresso é obrigatório") @Min(0) @Max(100) Integer percentualProgresso,
-		@Size(max = 1000) String justificativa) {
+		@NotNull(message = "O percentual de progresso é obrigatório")
+		@Min(value = 0, message = "O percentual de progresso mínimo é 0")
+		@Max(value = 100, message = "O percentual de progresso máximo é 100") Integer percentualProgresso,
+		@Size(max = 1000, message = "A justificativa deve ter no máximo 1000 caracteres") String justificativa) {
 
 	public AtualizarProgressoProjetoRequest {
 		justificativa = justificativa == null ? null : justificativa.strip();

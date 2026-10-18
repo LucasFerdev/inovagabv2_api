@@ -11,8 +11,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CriarProjetoRequest(
-		@NotBlank(message = "O nome é obrigatório") @Size(min = 3, max = 120) String nome,
-		@NotBlank(message = "A descrição é obrigatória") @Size(min = 10, max = 2000) String descricao,
+		@NotBlank(message = "O nome é obrigatório")
+		@Size(min = 3, max = 120, message = "O nome deve ter entre 3 e 120 caracteres") String nome,
+		@NotBlank(message = "A descrição é obrigatória")
+		@Size(min = 10, max = 2000, message = "A descrição deve ter entre 10 e 2000 caracteres") String descricao,
 		@NotBlank(message = "A estratégia é obrigatória") String estrategiaId,
 		@Size(min = 1, message = "A ideia de origem é inválida") String ideiaOrigemId,
 		@NotNull(message = "O investimento é obrigatório")

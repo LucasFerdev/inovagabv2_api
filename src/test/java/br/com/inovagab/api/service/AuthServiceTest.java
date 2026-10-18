@@ -158,6 +158,14 @@ class AuthServiceTest {
 	}
 
 	@Test
+	void loginRequestNaoExpoeSenhaEmTexto() {
+		String senha = "senha-confidencial-teste";
+		LoginRequest request = new LoginRequest("usuario@exemplo.com", senha);
+
+		assertThat(request.toString()).doesNotContain(senha);
+	}
+
+	@Test
 	void loginContinuaRetornandoRoleCadastrada() {
 		authService = authServiceComCodigos("codigo-gestor-teste", "codigo-lideranca-teste");
 		configurarPersistenciaDoCadastro();

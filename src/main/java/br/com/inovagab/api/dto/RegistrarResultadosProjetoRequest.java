@@ -19,7 +19,8 @@ public record RegistrarResultadosProjetoRequest(
 		@DecimalMin(value = "0.00", message = "O ganho de produtividade não pode ser negativo")
 		@DecimalMax(value = "1000.00", message = "O ganho de produtividade não pode ser superior a 1000.00")
 		BigDecimal ganhoProdutividadePercentual,
-		@NotBlank(message = "O resultado é obrigatório") @Size(min = 3, max = 2000) String resultado) {
+		@NotBlank(message = "O resultado é obrigatório")
+		@Size(min = 3, max = 2000, message = "O resultado deve ter entre 3 e 2000 caracteres") String resultado) {
 
 	public RegistrarResultadosProjetoRequest {
 		resultado = resultado == null ? null : resultado.strip();
