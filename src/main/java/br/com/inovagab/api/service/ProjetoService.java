@@ -60,6 +60,7 @@ public class ProjetoService {
 	public ProjetoResponse criar(CriarProjetoRequest request, String usuarioId) {
 		usuarioAutenticadoService.buscarAtivo(usuarioId);
 		validarReferencias(request.estrategiaId(), request.ideiaOrigemId());
+		validarIdeiaOrigemUnica(request.ideiaOrigemId());
 		Projeto projeto = new Projeto();
 		aplicarDados(projeto, request.nome(), request.descricao(), request.estrategiaId(), request.ideiaOrigemId(),
 				request.investimento(), request.prazo());
@@ -175,6 +176,12 @@ public class ProjetoService {
 			if (!estrategiaId.equals(ideia.getEstrategiaId())) {
 				throw new OperacaoProjetoInvalidaException("A ideia e o projeto devem utilizar a mesma estratégia");
 			}
+		}
+	}
+
+	private void validarIdeiaOrigemUnica(String ideiaOrigemId) {
+		if (ideiaOrigemId != null && projetoRepository.existsByIdeiaOrigemId(ideiaOrigemId)) {
+			throw new OperacaoProjetoInvalidaException("Já existe um projeto criado a partir desta ideia.");
 		}
 	}
 

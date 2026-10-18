@@ -75,7 +75,9 @@ class ProjetoServiceTest {
 		ArgumentCaptor<Projeto> captor = ArgumentCaptor.forClass(Projeto.class);
 		verify(projetoRepository).save(captor.capture());
 		assertThat(captor.getValue().getNome()).isEqualTo("Projeto inovador");
+		assertThat(captor.getValue().getIdeiaOrigemId()).isNull();
 		assertThat(captor.getValue().getGestorResponsavelId()).isEqualTo(GESTOR_ID);
+		verify(projetoRepository, never()).existsByIdeiaOrigemId(any());
 		assertThat(captor.getValue().getHistorico()).singleElement().extracting("acao")
 				.isEqualTo(AcaoHistoricoProjeto.CRIADO);
 	}
@@ -98,11 +100,23 @@ class ProjetoServiceTest {
 		Ideia ideia = ideia(StatusIdeia.EM_ANALISE, "estrategia-id");
 		when(ideiaRepository.findById("ideia-id")).thenReturn(Optional.of(ideia));
 		assertThatThrownBy(() -> projetoService.criar(criarRequest("ideia-id"), GESTOR_ID))
-				.isInstanceOf(OperacaoProjetoInvalidaException.class);
+				.isInstanceOf(OperacaoProjetoInvalidaException.class)
+				.hasMessage("A ideia de origem deve estar aprovada");
 		ideia.setStatus(StatusIdeia.APROVADA);
 		ideia.setEstrategiaId("outra-estrategia");
 		assertThatThrownBy(() -> projetoService.criar(criarRequest("ideia-id"), GESTOR_ID))
 				.isInstanceOf(OperacaoProjetoInvalidaException.class);
+	}
+
+	@Test
+	void segundaCriacaoDaMesmaIdeiaEhConflito() {
+		estrategiaAtiva();
+		when(ideiaRepository.findById("ideia-id")).thenReturn(Optional.of(ideia(StatusIdeia.APROVADA, "estrategia-id")));
+		when(projetoRepository.existsByIdeiaOrigemId("ideia-id")).thenReturn(true);
+		assertThatThrownBy(() -> projetoService.criar(criarRequest("ideia-id"), GESTOR_ID))
+				.isInstanceOf(OperacaoProjetoInvalidaException.class)
+				.hasMessage("Já existe um projeto criado a partir desta ideia.");
+		verify(projetoRepository, never()).save(any());
 	}
 
 	@Test

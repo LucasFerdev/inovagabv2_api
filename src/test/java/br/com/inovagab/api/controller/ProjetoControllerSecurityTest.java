@@ -106,6 +106,68 @@ class ProjetoControllerSecurityTest {
 	}
 
 	@Test
+	void ideiaNaoAprovadaRetorna409() throws Exception {
+		when(projetoService.criar(any(), eq("usuario-id")))
+				.thenThrow(new OperacaoProjetoInvalidaException("A ideia de origem deve estar aprovada"));
+		mockMvc.perform(post("/api/projetos").header("Authorization", bearer(Role.GESTOR))
+				.contentType(MediaType.APPLICATION_JSON).content(BODY))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.status").value(409))
+				.andExpect(jsonPath("$.mensagem").value("A ideia de origem deve estar aprovada"));
+	}
+
+	@Test
+	void segundaCriacaoDaMesmaIdeiaRetorna409() throws Exception {
+		when(projetoService.criar(any(), eq("usuario-id")))
+				.thenThrow(new OperacaoProjetoInvalidaException("Já existe um projeto criado a partir desta ideia."));
+		mockMvc.perform(post("/api/projetos").header("Authorization", bearer(Role.GESTOR))
+				.contentType(MediaType.APPLICATION_JSON).content(BODY))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.status").value(409))
+				.andExpect(jsonPath("$.mensagem").value("Já existe um projeto criado a partir desta ideia."));
+	}
+
+	@Test
+	void investimentoComTresCasasDecimaisRetorna400() throws Exception {
+		mockMvc.perform(post("/api/projetos").header("Authorization", bearer(Role.GESTOR))
+				.contentType(MediaType.APPLICATION_JSON).content(BODY.replace("1000.00", "1000.123")))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.mensagem", containsString(
+						"O investimento deve ter no máximo 13 dígitos inteiros e 2 casas decimais")));
+	}
+
+	@Test
+	void investimentoAcimaDoTetoRetorna400() throws Exception {
+		mockMvc.perform(post("/api/projetos").header("Authorization", bearer(Role.GESTOR))
+				.contentType(MediaType.APPLICATION_JSON).content(BODY.replace("1000.00", "10000000000000.00")))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.mensagem", containsString(
+						"O investimento não pode ser superior a 9999999999999.99")));
+	}
+
+	@Test
+	void retornoComTresCasasEGanhoAcimaDoTetoRetornam400() throws Exception {
+		String tresCasas = """
+				{"retornoFinanceiro":250000.123,"ganhoProdutividadePercentual":18.50,"resultado":"Redução de custos"}
+				""";
+		mockMvc.perform(patch("/api/projetos/projeto-id/resultados").header("Authorization", bearer(Role.GESTOR))
+				.contentType(MediaType.APPLICATION_JSON).content(tresCasas))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensagem", containsString(
+						"O retorno financeiro deve ter no máximo 13 dígitos inteiros e 2 casas decimais")));
+		String acimaDoTeto = """
+				{"retornoFinanceiro":250000.00,"ganhoProdutividadePercentual":1000.01,"resultado":"Redução de custos"}
+				""";
+		mockMvc.perform(patch("/api/projetos/projeto-id/resultados").header("Authorization", bearer(Role.GESTOR))
+				.contentType(MediaType.APPLICATION_JSON).content(acimaDoTeto))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensagem", containsString(
+						"O ganho de produtividade não pode ser superior a 1000.00")));
+	}
+
+	@Test
 	void projetoInexistenteRetorna404() throws Exception {
 		when(projetoService.buscarPorId("inexistente", "usuario-id")).thenThrow(new ProjetoNaoEncontradoException());
 		mockMvc.perform(get("/api/projetos/inexistente").header("Authorization", bearer(Role.GESTOR)))
