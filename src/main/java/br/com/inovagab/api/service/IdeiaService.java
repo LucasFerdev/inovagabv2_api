@@ -2,8 +2,12 @@ package br.com.inovagab.api.service;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 
 import org.springframework.data.domain.PageRequest;
@@ -34,19 +38,23 @@ import br.com.inovagab.api.model.StatusIdeia;
 import br.com.inovagab.api.model.Usuario;
 import br.com.inovagab.api.repository.EstrategiaRepository;
 import br.com.inovagab.api.repository.IdeiaRepository;
+import br.com.inovagab.api.repository.UsuarioRepository;
 
 @Service
 public class IdeiaService {
 
 	private final IdeiaRepository ideiaRepository;
 	private final EstrategiaRepository estrategiaRepository;
+	private final UsuarioRepository usuarioRepository;
 	private final MongoTemplate mongoTemplate;
 	private final UsuarioAutenticadoService usuarioAutenticadoService;
 
 	public IdeiaService(IdeiaRepository ideiaRepository, EstrategiaRepository estrategiaRepository,
-			MongoTemplate mongoTemplate, UsuarioAutenticadoService usuarioAutenticadoService) {
+			UsuarioRepository usuarioRepository, MongoTemplate mongoTemplate,
+			UsuarioAutenticadoService usuarioAutenticadoService) {
 		this.ideiaRepository = ideiaRepository;
 		this.estrategiaRepository = estrategiaRepository;
+		this.usuarioRepository = usuarioRepository;
 		this.mongoTemplate = mongoTemplate;
 		this.usuarioAutenticadoService = usuarioAutenticadoService;
 	}
@@ -60,7 +68,7 @@ public class IdeiaService {
 		ideia.setAutorId(usuarioId);
 		ideia.setStatus(StatusIdeia.ENVIADA);
 		registrarHistorico(ideia, AcaoHistoricoIdeia.CRIADA, usuarioId);
-		return IdeiaResponse.de(ideiaRepository.save(ideia));
+		return responder(ideiaRepository.save(ideia));
 	}
 
 	public IdeiaResponse atualizar(String id, AtualizarIdeiaRequest request, String usuarioId) {
@@ -71,7 +79,7 @@ public class IdeiaService {
 		aplicarDados(ideia, request.titulo(), request.problema(), request.solucaoProposta(),
 				request.beneficiosEsperados(), request.categoria(), request.estrategiaId());
 		registrarHistorico(ideia, AcaoHistoricoIdeia.ATUALIZADA, usuarioId);
-		return IdeiaResponse.de(ideiaRepository.save(ideia));
+		return responder(ideiaRepository.save(ideia));
 	}
 
 	public void arquivar(String id, String usuarioId) {
@@ -89,7 +97,7 @@ public class IdeiaService {
 		validarStatus(ideia, StatusIdeia.ENVIADA, "Somente uma ideia enviada pode entrar em análise");
 		ideia.setStatus(StatusIdeia.EM_ANALISE);
 		registrarHistorico(ideia, AcaoHistoricoIdeia.ENVIADA_PARA_ANALISE, usuarioId);
-		return IdeiaResponse.de(ideiaRepository.save(ideia));
+		return responder(ideiaRepository.save(ideia));
 	}
 
 	public IdeiaResponse priorizar(String id, PriorizarIdeiaRequest request, String usuarioId) {
@@ -101,7 +109,7 @@ public class IdeiaService {
 		ideia.setAvaliadoPorId(usuarioId);
 		ideia.setAvaliadoEm(Instant.now());
 		registrarHistorico(ideia, AcaoHistoricoIdeia.PRIORIZADA, usuarioId);
-		return IdeiaResponse.de(ideiaRepository.save(ideia));
+		return responder(ideiaRepository.save(ideia));
 	}
 
 	public IdeiaResponse aprovar(String id, String usuarioId) {
@@ -115,7 +123,7 @@ public class IdeiaService {
 		ideia.setAvaliadoPorId(usuarioId);
 		ideia.setAvaliadoEm(Instant.now());
 		registrarHistorico(ideia, AcaoHistoricoIdeia.APROVADA, usuarioId);
-		return IdeiaResponse.de(ideiaRepository.save(ideia));
+		return responder(ideiaRepository.save(ideia));
 	}
 
 	public IdeiaResponse rejeitar(String id, RejeitarIdeiaRequest request, String usuarioId) {
@@ -127,14 +135,14 @@ public class IdeiaService {
 		ideia.setAvaliadoPorId(usuarioId);
 		ideia.setAvaliadoEm(Instant.now());
 		registrarHistorico(ideia, AcaoHistoricoIdeia.REJEITADA, usuarioId);
-		return IdeiaResponse.de(ideiaRepository.save(ideia));
+		return responder(ideiaRepository.save(ideia));
 	}
 
 	public IdeiaResponse buscarPorId(String id, String usuarioId) {
 		Usuario usuario = usuarioAutenticadoService.buscarAtivo(usuarioId);
 		Ideia ideia = buscarEntidade(id);
 		validarConsulta(ideia, usuario);
-		return IdeiaResponse.de(ideia);
+		return responder(ideia);
 	}
 
 	public List<HistoricoIdeiaResponse> consultarHistorico(String id, String usuarioId) {
@@ -166,9 +174,42 @@ public class IdeiaService {
 	private PaginaResponse<IdeiaResponse> executarConsulta(Query query, int pagina, int tamanho) {
 		long total = mongoTemplate.count(query, Ideia.class);
 		PageRequest paginacao = PageRequest.of(pagina, tamanho, Sort.by(Sort.Direction.DESC, "criadoEm"));
-		List<IdeiaResponse> conteudo = mongoTemplate.find(query.with(paginacao), Ideia.class).stream()
-				.map(IdeiaResponse::de).toList();
+		List<Ideia> ideias = mongoTemplate.find(query.with(paginacao), Ideia.class);
+		Map<String, String> nomes = nomesDosAutores(ideias);
+		List<IdeiaResponse> conteudo = ideias.stream()
+				.map(ideia -> IdeiaResponse.de(ideia, nomeNaPagina(nomes, ideia.getAutorId())))
+				.toList();
 		return PaginaResponse.de(conteudo, pagina, tamanho, total);
+	}
+
+	private IdeiaResponse responder(Ideia ideia) {
+		return IdeiaResponse.de(ideia, nomeDoAutor(ideia));
+	}
+
+	private String nomeDoAutor(Ideia ideia) {
+		String autorId = ideia.getAutorId();
+		if (!StringUtils.hasText(autorId)) {
+			return null;
+		}
+		return usuarioRepository.findById(autorId).map(Usuario::getNome).orElse(null);
+	}
+
+	private String nomeNaPagina(Map<String, String> nomes, String autorId) {
+		if (!StringUtils.hasText(autorId)) {
+			return null;
+		}
+		return nomes.get(autorId);
+	}
+
+	private Map<String, String> nomesDosAutores(List<Ideia> ideias) {
+		Set<String> ids = ideias.stream().map(Ideia::getAutorId).filter(StringUtils::hasText)
+				.collect(Collectors.toSet());
+		if (ids.isEmpty()) {
+			return Map.of();
+		}
+		Map<String, String> nomes = new HashMap<>();
+		usuarioRepository.findAllById(ids).forEach(usuario -> nomes.put(usuario.getId(), usuario.getNome()));
+		return nomes;
 	}
 
 	private void validarConsulta(Ideia ideia, Usuario usuario) {
