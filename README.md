@@ -16,6 +16,7 @@ Projeto de estudo e portfólio — Desenvolvimento Backend.
 - [Como executar](#como-executar)
 - [Frontend](#frontend)
 - [Backend](#backend)
+- [Deploy](#deploy)
 - [Banco de dados](#banco-de-dados)
 - [API — Endpoints](#api--endpoints)
 - [Insomnia](#insomnia)
@@ -216,6 +217,33 @@ Para executar a suíte de testes:
 ```
 
 Os testes automatizados não acessam o MongoDB Atlas nem a Gemini API real.
+
+## Deploy
+
+A imagem é construída com o `Dockerfile` da raiz. O build executa os testes e gera o jar; a imagem final usa apenas o JRE.
+
+```bash
+docker build -t inovagab-api .
+docker run --rm -p 8080:8080 \
+  -e MONGODB_URI="<uri-do-mongodb>" \
+  -e JWT_SECRET="<chave-base64>" \
+  inovagab-api
+```
+
+Passe os valores somente no ambiente de execução (`-e NOME=valor` ou um arquivo de ambiente não versionado). Não grave segredos na imagem nem no repositório.
+
+| Variável | Obrigatória | Descrição |
+|---|---:|---|
+| `MONGODB_URI` | Sim | URI completa do MongoDB |
+| `JWT_SECRET` | Sim | Chave Base64 com pelo menos 256 bits |
+| `JWT_EXPIRATION_SECONDS` | Não | Validade do JWT; padrão `3600` segundos |
+| `PORT` | Não | Porta HTTP; padrão `8080` |
+| `CADASTRO_CODIGO_GESTOR` | Não | Código privado para cadastro de gestores |
+| `CADASTRO_CODIGO_LIDERANCA` | Não | Código privado para cadastro de lideranças |
+| `GEMINI_API_KEY` | Para IA | Chave de acesso à Gemini API |
+| `GEMINI_MODEL` | Não | Modelo; padrão `gemini-3.5-flash-lite` |
+| `GEMINI_BASE_URL` | Não | URL base do provedor |
+| `GEMINI_TIMEOUT_SECONDS` | Não | Timeout da integração; padrão `20` segundos |
 
 ## Banco de dados
 

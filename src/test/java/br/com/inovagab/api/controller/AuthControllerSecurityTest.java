@@ -280,6 +280,26 @@ class AuthControllerSecurityTest {
 	}
 
 	@Test
+	void nomeAcimaDe120CaracteresNoCadastroRetorna400EmPortugues() throws Exception {
+		String nomeLongo = "N".repeat(121);
+
+		mockMvc.perform(post("/api/auth/cadastro")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "nome": "%s",
+						  "email": "usuario@exemplo.com",
+						  "senha": "senha-segura",
+						  "empresa": "Empresa Teste"
+						}
+						""".formatted(nomeLongo)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.mensagem").value("nome: O nome deve ter no máximo 120 caracteres"))
+				.andExpect(content().string(not(containsString(nomeLongo))));
+	}
+
+	@Test
 	void senhaLongaNoLoginRetornaErroSemExporValor() throws Exception {
 		String senhaLonga = "S".repeat(73);
 

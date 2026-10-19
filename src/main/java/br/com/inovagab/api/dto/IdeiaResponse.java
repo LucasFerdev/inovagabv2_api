@@ -14,6 +14,7 @@ public record IdeiaResponse(
 		String categoria,
 		String estrategiaId,
 		String autorId,
+		String autorNome,
 		StatusIdeia status,
 		Integer prioridade,
 		String justificativaAvaliacao,
@@ -23,10 +24,11 @@ public record IdeiaResponse(
 		Instant atualizadoEm,
 		Long versao) {
 
-	public static IdeiaResponse de(Ideia ideia) {
+	public static IdeiaResponse de(Ideia ideia, String autorNome) {
 		return new IdeiaResponse(ideia.getId(), ideia.getTitulo(), ideia.getProblema(), ideia.getSolucaoProposta(),
 				ideia.getBeneficiosEsperados(), ideia.getCategoria(), ideia.getEstrategiaId(), ideia.getAutorId(),
-				ideia.getStatus(), ideia.getPrioridade(), ideia.getJustificativaAvaliacao(), ideia.getAvaliadoPorId(),
-				ideia.getAvaliadoEm(), ideia.getCriadoEm(), ideia.getAtualizadoEm(), ideia.getVersao());
+				autorNome, ideia.getStatus(), ideia.getPrioridade(), ideia.getJustificativaAvaliacao(),
+				ideia.getAvaliadoPorId(), ideia.getAvaliadoEm(), ideia.getCriadoEm(), ideia.getAtualizadoEm(),
+				ideia.getVersao());
 	}
 }

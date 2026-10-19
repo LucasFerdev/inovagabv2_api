@@ -135,6 +135,6 @@ class IdeiaControllerSecurityTest {
 	private IdeiaResponse response() {
 		return new IdeiaResponse("ideia-id", "Ideia válida", "Problema operacional relevante",
 				"Solução proposta detalhada", "Benefícios esperados relevantes", "Inovação", "estrategia-id",
-				"usuario-id", StatusIdeia.ENVIADA, null, null, null, null, Instant.now(), Instant.now(), 0L);
+				"usuario-id", null, StatusIdeia.ENVIADA, null, null, null, null, Instant.now(), Instant.now(), 0L);
 	}
 }

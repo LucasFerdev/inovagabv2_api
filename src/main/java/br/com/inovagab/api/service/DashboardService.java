@@ -3,7 +3,7 @@ package br.com.inovagab.api.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
@@ -123,11 +123,30 @@ public class DashboardService {
 				.sum(condicao("status", StatusProjeto.PAUSADO)).as("pausado")
 				.sum(condicao("status", StatusProjeto.CONCLUIDO)).as("concluido")
 				.sum(condicao("status", StatusProjeto.CANCELADO)).as("cancelado")
-				.sum("investimento").as("investimento").sum("retornoFinanceiro").as("retorno")
+				.sum(valorSeNaoCancelado("investimento")).as("investimento")
+				.sum(valorSeNaoCancelado("retornoFinanceiro")).as("retorno")
 				.avg("percentualProgresso").as("progressoMedio")
-				.avg("ganhoProdutividadePercentual").as("produtividadeMedia")
+				.avg(produtividadeConsiderada()).as("produtividadeMedia")
 				.sum(ConditionalOperators.when(atrasado).then(1).otherwise(0)).as("atrasados"));
 		return Aggregation.newAggregation(operacoes);
+	}
+
+	private AggregationExpression valorSeNaoCancelado(String campo) {
+		return ConditionalOperators.when(naoCancelado()).thenValueOf(campo).otherwise(0);
+	}
+
+	private AggregationExpression produtividadeConsiderada() {
+		return context -> new Document("$cond",
+				new Document("if", BooleanOperators.And.and(naoCancelado(), resultadoRegistrado()).toDocument(context))
+						.append("then", "$ganhoProdutividadePercentual").append("else", null));
+	}
+
+	private AggregationExpression naoCancelado() {
+		return ComparisonOperators.Ne.valueOf("status").notEqualToValue(StatusProjeto.CANCELADO.name());
+	}
+
+	private AggregationExpression resultadoRegistrado() {
+		return context -> new Document("$ne", Arrays.asList("$resultado", null));
 	}
 
 	private Aggregation agregacaoIdeias(String estrategiaId) {
@@ -190,7 +209,7 @@ public class DashboardService {
 	private BigDecimal dinheiro(BigDecimal valor) { return valor.setScale(ESCALA, RoundingMode.HALF_UP); }
 	private BigDecimal percentual(BigDecimal valor) { return valor.setScale(ESCALA, RoundingMode.HALF_UP); }
 	private Date dataAtual() {
-		return Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+		return Date.from(LocalDate.now(Projeto.FUSO).atStartOfDay(Projeto.FUSO).toInstant());
 	}
 
 	private BigDecimal roi(BigDecimal investimento, BigDecimal retorno) {
@@ -200,7 +219,6 @@ public class DashboardService {
 	}
 
 	private boolean atrasado(Projeto projeto) {
-		return projeto.getPrazo() != null && projeto.getPrazo().isBefore(LocalDate.now())
-				&& projeto.getStatus() != StatusProjeto.CONCLUIDO && projeto.getStatus() != StatusProjeto.CANCELADO;
+		return Projeto.atrasado(projeto.getPrazo(), projeto.getStatus());
 	}
 }

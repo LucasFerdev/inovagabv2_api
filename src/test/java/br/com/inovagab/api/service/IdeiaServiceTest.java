@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +42,7 @@ import br.com.inovagab.api.model.StatusIdeia;
 import br.com.inovagab.api.model.Usuario;
 import br.com.inovagab.api.repository.EstrategiaRepository;
 import br.com.inovagab.api.repository.IdeiaRepository;
+import br.com.inovagab.api.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
 class IdeiaServiceTest {
@@ -49,16 +51,19 @@ class IdeiaServiceTest {
 
 	@Mock private IdeiaRepository ideiaRepository;
 	@Mock private EstrategiaRepository estrategiaRepository;
+	@Mock private UsuarioRepository usuarioRepository;
 	@Mock private MongoTemplate mongoTemplate;
 	@Mock private UsuarioAutenticadoService usuarioAutenticadoService;
 	private IdeiaService ideiaService;
 
 	@BeforeEach
 	void configurar() {
-		ideiaService = new IdeiaService(ideiaRepository, estrategiaRepository, mongoTemplate,
+		ideiaService = new IdeiaService(ideiaRepository, estrategiaRepository, usuarioRepository, mongoTemplate,
 				usuarioAutenticadoService);
 		lenient().when(usuarioAutenticadoService.buscarAtivo(USUARIO_ID))
 				.thenReturn(usuario(USUARIO_ID, Role.OPERADOR));
+		lenient().when(usuarioRepository.findById(any())).thenReturn(Optional.empty());
+		lenient().when(usuarioRepository.findAllById(any())).thenReturn(List.of());
 	}
 
 	@Test
@@ -188,6 +193,34 @@ class IdeiaServiceTest {
 	}
 
 	@Test
+	void listarDevolveAutorNomeComUmaUnicaConsulta() {
+		Ideia daAna = ideia(StatusIdeia.ENVIADA, "autor-ana");
+		daAna.setId("ideia-ana");
+		Ideia doBruno = ideia(StatusIdeia.EM_ANALISE, "autor-bruno");
+		doBruno.setId("ideia-bruno");
+		Ideia repetida = ideia(StatusIdeia.APROVADA, "autor-ana");
+		repetida.setId("ideia-ana-2");
+		Ideia semAutor = ideia(StatusIdeia.ENVIADA, null);
+		semAutor.setId("ideia-sem-autor");
+		when(mongoTemplate.count(any(Query.class), eq(Ideia.class))).thenReturn(4L);
+		when(mongoTemplate.find(any(Query.class), eq(Ideia.class)))
+				.thenReturn(List.of(daAna, doBruno, repetida, semAutor));
+		when(usuarioRepository.findAllById(any())).thenReturn(List.of(
+				usuario("autor-ana", "Ana", Role.OPERADOR),
+				usuario("autor-bruno", "Bruno", Role.GESTOR)));
+
+		PaginaResponse<IdeiaResponse> pagina = ideiaService.listar(null, null, null, null, 0, 20, USUARIO_ID);
+
+		assertThat(pagina.conteudo()).extracting(IdeiaResponse::autorNome)
+				.containsExactly("Ana", "Bruno", "Ana", null);
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<Iterable<String>> ids = ArgumentCaptor.forClass(Iterable.class);
+		verify(usuarioRepository, times(1)).findAllById(ids.capture());
+		assertThat(ids.getValue()).containsExactlyInAnyOrder("autor-ana", "autor-bruno");
+		verify(usuarioRepository, never()).findById(any());
+	}
+
+	@Test
 	void historicoRetornaMaisRecentePrimeiro() {
 		Ideia ideia = ideia(StatusIdeia.EM_ANALISE, USUARIO_ID);
 		ideia.adicionarHistorico(new br.com.inovagab.api.model.HistoricoIdeia("1", AcaoHistoricoIdeia.CRIADA,
@@ -235,8 +268,13 @@ class IdeiaServiceTest {
 	}
 
 	private Usuario usuario(String id, Role role) {
+		return usuario(id, null, role);
+	}
+
+	private Usuario usuario(String id, String nome, Role role) {
 		Usuario usuario = new Usuario();
 		usuario.setId(id);
+		usuario.setNome(nome);
 		usuario.setRole(role);
 		usuario.setAtivo(true);
 		return usuario;
